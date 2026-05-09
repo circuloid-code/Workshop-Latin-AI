@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Facilitador — Diagnóstico IA</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #1A1814; --bg2: #242018; --bg3: #2D2C28;
+  --ink: #F0EDE5; --ink2: #A09880; --ink3: #5C5849;
+  --accent: #4A8C76; --accent-light: rgba(74,140,118,0.15); --accent-glow: rgba(74,140,118,0.4);
+  --warn: #C4622D; --border: rgba(240,237,229,0.1); --r: 10px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+.header { padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: var(--bg); z-index: 10; }
+.logo { font-family: 'DM Serif Display', serif; font-size: 16px; }
+.badge-fac { background: var(--accent-light); color: var(--accent); font-size: 10px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; border: 1px solid var(--accent-glow); }
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.last-refresh { font-size: 11px; color: var(--ink3); }
+.refresh-btn { display: flex; align-items: center; gap: 6px; background: var(--bg3); border: 1px solid var(--border); color: var(--ink2); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 7px 14px; border-radius: 8px; cursor: pointer; }
+.refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+.sheets-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-size: 12px; text-decoration: none; border: 1px solid var(--accent-glow); padding: 6px 12px; border-radius: 8px; }
+.sheets-link:hover { background: var(--accent-light); }
+.wrap { max-width: 1000px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.empty-state { text-align: center; padding: 5rem 0; }
+.empty-state h2 { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--ink2); margin-bottom: .75rem; }
+.empty-state p { font-size: 13px; color: var(--ink3); line-height: 1.7; }
+.pulse { display: inline-block; width: 10px; height: 10px; background: var(--accent); border-radius: 50%; margin-right: 8px; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 2rem; }
+.stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 1.25rem; }
+.stat-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .06em; color: var(--ink3); margin-bottom: 8px; }
+.stat-num { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--ink); }
+.stat-sub { font-size: 11px; color: var(--ink3); margin-top: 3px; }
+.section-title { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--ink); margin-bottom: 1rem; margin-top: 2rem; }
+.group-chart-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 1.5rem; margin-bottom: 1.5rem; }
+.chart-title { font-size: 11px; font-weight: 500; color: var(--ink2); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 1.25rem; }
+.bar-chart { display: flex; flex-direction: column; gap: 10px; }
+.bar-row { display: flex; align-items: center; gap: 10px; }
+.bar-name { font-size: 12px; color: var(--ink2); min-width: 100px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 22px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; background: var(--accent); display: flex; align-items: center; padding-left: 8px; min-width: 40px; }
+.bar-val { font-size: 11px; color: white; font-weight: 500; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+.barrier-list { display: flex; flex-direction: column; gap: 8px; }
+.barrier-row { display: flex; align-items: center; gap: 8px; }
+.barrier-text { font-size: 12px; color: var(--ink2); flex: 1; line-height: 1.4; }
+.barrier-count { font-size: 12px; font-weight: 500; color: var(--warn); min-width: 16px; text-align: right; }
+.barrier-count.green { color: var(--accent); }
+.barrier-track { width: 50px; height: 5px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.barrier-bar { height: 100%; background: var(--warn); border-radius: 3px; }
+.barrier-bar.green { background: var(--accent); }
+.participants { display: flex; flex-direction: column; gap: 10px; }
+.p-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.p-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; cursor: pointer; }
+.p-header:hover { background: var(--bg3); }
+.p-left { display: flex; align-items: center; gap: 12px; }
+.avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; flex-shrink: 0; }
+.av-creativo { background: rgba(74,140,118,0.2); color: #4A8C76; }
+.av-admin { background: rgba(186,117,23,0.2); color: #EF9F27; }
+.av-psicologo { background: rgba(155,143,204,0.2); color: #9B8FCC; }
+.av-otro { background: rgba(92,88,73,0.3); color: var(--ink2); }
+.p-name { font-size: 14px; font-weight: 500; color: var(--ink); }
+.p-role { font-size: 11px; color: var(--ink3); }
+.level-circle { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 16px; }
+.level-low { background: rgba(196,98,45,0.2); color: #C4622D; border: 1px solid rgba(196,98,45,0.3); }
+.level-mid { background: rgba(186,117,23,0.2); color: #EF9F27; border: 1px solid rgba(186,117,23,0.3); }
+.level-high { background: rgba(74,140,118,0.2); color: #4A8C76; border: 1px solid rgba(74,140,118,0.3); }
+.chevron { font-size: 14px; color: var(--ink3); transition: transform .2s; }
+.p-card.open .chevron { transform: rotate(180deg); }
+.p-body { display: none; padding: 0 1.25rem 1.25rem; border-top: 1px solid var(--border); }
+.p-card.open .p-body { display: block; }
+.dims-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-top: 1rem; }
+.dim { background: var(--bg3); border-radius: 8px; padding: 10px; text-align: center; }
+.dim-label { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px; }
+.dim-val { font-size: 18px; font-weight: 300; color: var(--ink); }
+.dim-val span { font-size: 10px; color: var(--ink3); }
+.dim-bar-w { height: 3px; background: var(--bg); border-radius: 2px; margin-top: 4px; }
+.dim-bar { height: 100%; border-radius: 2px; background: var(--accent); }
+.tags-section { margin-top: .875rem; }
+.tags-label { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+.tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; }
+.tag-b { background: rgba(196,98,45,0.15); color: #C4622D; border: 1px solid rgba(196,98,45,0.2); }
+.tag-i { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-glow); }
+.no-data { font-size: 12px; color: var(--ink3); font-style: italic; }
+.ts { font-size: 10px; color: var(--ink3); margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">Panel Facilitador</div>
+    <span class="badge-fac">Solo tú ves esto</span>
+  </div>
+  <div class="header-right">
+    <a class="sheets-link" href="https://docs.google.com/spreadsheets/d/15XNTtby7sdBSKj9oshHSfAlJbDQLgaovRuprc1WVWJs/edit" target="_blank">Ver hoja ↗</a>
+    <span class="last-refresh" id="lastRefresh"></span>
+    <button class="refresh-btn" onclick="loadData()">↻ Actualizar</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="emptyState" class="empty-state">
+    <p><span class="pulse"></span>Esperando respuestas...</p>
+    <h2 style="margin-top:1rem;">Todavía no hay datos</h2>
+    <p style="margin-top:.5rem;">Comparte el cuestionario. Las respuestas aparecerán aquí automáticamente.</p>
+    <p style="margin-top:1.5rem;font-size:12px;color:var(--ink3);">Si ya hay respuestas y no aparecen, asegúrate de que tu Google Sheet sea <strong style="color:var(--ink2);">pública para cualquiera con el link</strong> (Compartir → Cualquier persona con el enlace → Lector).</p>
+  </div>
+  <div id="dashboard" style="display:none;">
+    <div class="summary-grid" id="summaryGrid"></div>
+    <div class="section-title">Niveles del grupo</div>
+    <div class="group-chart-wrap">
+      <div class="chart-title">Nivel general por participante (0–10)</div>
+      <div class="bar-chart" id="levelChart"></div>
+    </div>
+    <div class="two-col">
+      <div class="group-chart-wrap">
+        <div class="chart-title">Barreras más frecuentes</div>
+        <div class="barrier-list" id="barrierList"></div>
+      </div>
+      <div class="group-chart-wrap">
+        <div class="chart-title">Intereses más frecuentes</div>
+        <div class="barrier-list" id="interestList"></div>
+      </div>
+    </div>
+    <div class="section-title">Detalle por participante</div>
+    <div class="participants" id="participantsList"></div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = '15XNTtby7sdBSKj9oshHSfAlJbDQLgaovRuprc1WVWJs';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+const roleLabels = { creativo:'Creación artística', admin:'Administración', psicologo:'Psicología', educacion:'Educación', otro:'Otra área' };
+const roleAv = { creativo:'av-creativo', admin:'av-admin', psicologo:'av-psicologo', educacion:'av-otro', otro:'av-otro' };
+
+function initials(n) { return (n||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase(); }
+function lvlClass(n) { return n<=3?'level-low':n<=6?'level-mid':'level-high'; }
+
+function parseCSV(text) {
+  const lines = text.trim().split('\n').slice(1);
+  return lines.map(line => {
+    const f = []; let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i]==='"') { q=!q; }
+      else if (line[i]===','&&!q) { f.push(cur); cur=''; }
+      else { cur+=line[i]; }
+    }
+    f.push(cur);
+    let intereses=[], barreras=[];
+    try { intereses=JSON.parse(f[9]||'[]'); } catch(e){}
+    try { barreras=JSON.parse(f[10]||'[]'); } catch(e){}
+    return {
+      timestamp: f[0]||'', name: f[1]||'', role: f[2]||'',
+      scores: { overall:+f[3]||0, dimFreq:+f[4]||0, dimIter:+f[5]||0, dimConf:+f[6]||0, dimSkill:+f[7]||0, dimIntent:+f[8]||0 },
+      answers: { intereses, barreras, expectativa: f[11]||'' }
+    };
+  }).filter(p=>p.name);
+}
+
+async function loadData() {
+  document.getElementById('lastRefresh').textContent = 'Actualizando...';
+  try {
+    const res = await fetch(CSV_URL+'&t='+Date.now());
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    const ps = parseCSV(text);
+    document.getElementById('lastRefresh').textContent = 'Actualizado: '+new Date().toLocaleTimeString('es');
+    if (ps.length===0) {
+      document.getElementById('emptyState').style.display='block';
+      document.getElementById('dashboard').style.display='none';
+    } else {
+      document.getElementById('emptyState').style.display='none';
+      document.getElementById('dashboard').style.display='block';
+      render(ps);
+    }
+  } catch(e) {
+    document.getElementById('lastRefresh').textContent = 'Error: haz la hoja pública';
+    console.error(e);
+  }
+}
+
+function render(ps) {
+  const avg = arr => Math.round(arr.reduce((a,b)=>a+b,0)/arr.length);
+  const levels = ps.map(p=>p.scores.overall);
+  document.getElementById('summaryGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Participantes</div><div class="stat-num">${ps.length}</div><div class="stat-sub">respuestas recibidas</div></div>
+    <div class="stat-card"><div class="stat-label">Nivel promedio</div><div class="stat-num">${avg(levels)}<span style="font-size:1rem;color:var(--ink3)">/10</span></div><div class="stat-sub">del grupo</div></div>
+    <div class="stat-card"><div class="stat-label">Confianza promedio</div><div class="stat-num">${avg(ps.map(p=>p.scores.dimConf))}<span style="font-size:1rem;color:var(--ink3)">/10</span></div><div class="stat-sub">autoreportada</div></div>
+    <div class="stat-card"><div class="stat-label">Rango</div><div class="stat-num" style="font-size:1.4rem;">${Math.min(...levels)}–${Math.max(...levels)}</div><div class="stat-sub">nivel mín – máx</div></div>`;
+
+  document.getElementById('levelChart').innerHTML = [...ps].sort((a,b)=>b.scores.overall-a.scores.overall).map(p=>`
+    <div class="bar-row">
+      <div class="bar-name">${p.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(p.scores.overall*10,12)}%"><span class="bar-val">${p.scores.overall}/10</span></div></div>
+    </div>`).join('');
+
+  const countItems = (arr, key) => { const c={}; arr.forEach(p=>(p.answers?.[key]||[]).forEach(x=>{c[x]=(c[x]||0)+1;})); return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5); };
+  const renderList = (items, cls) => { const max=items[0]?.[1]||1; return items.map(([t,c])=>`<div class="barrier-row"><div class="barrier-text">${t.length>32?t.slice(0,31)+'…':t}</div><div class="barrier-count ${cls}">${c}</div><div class="barrier-track"><div class="barrier-bar ${cls}" style="width:${c/max*100}%"></div></div></div>`).join('')||'<div class="no-data">Sin datos</div>'; };
+
+  document.getElementById('barrierList').innerHTML = renderList(countItems(ps,'barreras'), '');
+  document.getElementById('interestList').innerHTML = renderList(countItems(ps,'intereses'), 'green');
+
+  document.getElementById('participantsList').innerHTML = ps.map((p,i)=>{
+    const s=p.scores; const dims=[{l:'Frecuencia',v:s.dimFreq},{l:'Iteración',v:s.dimIter},{l:'Confianza',v:s.dimConf},{l:'Técnicas',v:s.dimSkill},{l:'Motivación',v:s.dimIntent}];
+    return `<div class="p-card" id="pc${i}">
+      <div class="p-header" onclick="tc(${i})">
+        <div class="p-left">
+          <div class="avatar ${roleAv[p.role]||'av-otro'}">${initials(p.name)}</div>
+          <div><div class="p-name">${p.name}</div><div class="p-role">${roleLabels[p.role]||p.role||'—'}</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;">
+          <div style="display:flex;align-items:center;gap:8px;"><div class="level-circle ${lvlClass(s.overall)}">${s.overall}</div><div class="level-label">nivel<br>/10</div></div>
+          <div class="chevron">▾</div>
+        </div>
+      </div>
+      <div class="p-body">
+        <div class="dims-row">${dims.map(d=>`<div class="dim"><div class="dim-label">${d.l}</div><div class="dim-val">${d.v}<span>/10</span></div><div class="dim-bar-w"><div class="dim-bar" style="width:${d.v*10}%"></div></div></div>`).join('')}</div>
+        <div class="tags-section"><div class="tags-label">Intereses</div><div class="tags">${(p.answers.intereses||[]).map(t=>`<span class="tag tag-i">${t}</span>`).join('')||'<span class="no-data">—</span>'}</div></div>
+        <div class="tags-section"><div class="tags-label">Barreras</div><div class="tags">${(p.answers.barreras||[]).map(t=>`<span class="tag tag-b">${t}</span>`).join('')||'<span class="no-data">—</span>'}</div></div>
+        ${p.answers.expectativa?`<div class="tags-section"><div class="tags-label">Expectativa</div><div style="font-size:12px;color:var(--ink2);">${p.answers.expectativa}</div></div>`:''}
+        <div class="ts">Enviado: ${p.timestamp}</div>
+      </div></div>`;
+  }).join('');
+}
+
+function tc(i) { document.getElementById('pc'+i).classList.toggle('open'); }
+loadData();
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>

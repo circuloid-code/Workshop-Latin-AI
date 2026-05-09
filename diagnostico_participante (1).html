@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico IA — Workshop</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #F5F2EC; --bg2: #EDE9E0; --ink: #1A1814; --ink2: #5C5849; --ink3: #9C9688;
+  --accent: #2D5F4F; --accent2: #4A8C76; --accent-light: #D4EBE3;
+  --border: rgba(26,24,20,0.12); --r: 12px;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+.site-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 2rem; border-bottom: 1px solid var(--border);
+  background: var(--bg); position: sticky; top: 0; z-index: 10;
+}
+.logo { font-family: 'DM Serif Display', serif; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+.progress-wrap { display: flex; align-items: center; gap: 10px; }
+.progress-bar { width: 120px; height: 3px; background: var(--bg2); border-radius: 2px; overflow: hidden; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .4s ease; }
+.progress-label { font-size: 12px; color: var(--ink3); }
+.wrap { max-width: 680px; margin: 0 auto; padding: 2.5rem 1.5rem 6rem; }
+.name-screen { padding: 2.5rem 0; }
+.intro-tag { display: inline-block; background: var(--accent-light); color: var(--accent); font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 1.25rem; }
+.name-screen h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.2; margin-bottom: 1rem; }
+.name-screen h1 em { font-style: italic; color: var(--accent); }
+.name-screen p { font-size: 14px; color: var(--ink2); line-height: 1.75; margin-bottom: 2rem; max-width: 500px; }
+.name-input-wrap { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.25rem; }
+.name-input-wrap label { font-size: 13px; font-weight: 500; color: var(--ink2); }
+.name-input { padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--r); background: white; font-family: 'DM Sans', sans-serif; font-size: 15px; color: var(--ink); outline: none; transition: border .2s; width: 100%; max-width: 360px; }
+.name-input:focus { border-color: var(--accent); }
+.role-select { padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--r); background: white; font-family: 'DM Sans', sans-serif; font-size: 14px; color: var(--ink); outline: none; width: 100%; max-width: 360px; cursor: pointer; }
+.start-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: white; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; padding: 12px 28px; border-radius: var(--r); border: none; cursor: pointer; transition: background .2s; margin-top: .5rem; }
+.start-btn:hover { background: #234a3d; }
+.start-btn:disabled { background: var(--bg2); color: var(--ink3); cursor: not-allowed; }
+.section { display: none; animation: fadeUp .3s ease; }
+.section.active { display: block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.section-header { margin-bottom: 1.75rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.section-num { font-size: 11px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--ink3); margin-bottom: .4rem; }
+.section-title { font-family: 'DM Serif Display', serif; font-size: 1.5rem; color: var(--ink); }
+.question { margin-bottom: 1.75rem; }
+.q-text { font-size: 14px; font-weight: 500; color: var(--ink); margin-bottom: .75rem; line-height: 1.55; }
+.q-sub { font-size: 12px; color: var(--ink3); margin-top: -4px; margin-bottom: .75rem; }
+.singles { display: flex; flex-direction: column; gap: 7px; }
+.single { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: var(--r); border: 1.5px solid var(--border); background: white; cursor: pointer; transition: all .15s; font-size: 13px; color: var(--ink); }
+.single:hover { border-color: var(--accent2); }
+.single.selected { border-color: var(--accent); background: var(--accent-light); font-weight: 500; }
+.radio-dot { width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.single.selected .radio-dot { border-color: var(--accent); }
+.radio-inner { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: none; }
+.single.selected .radio-inner { display: block; }
+.choices { display: flex; flex-direction: column; gap: 7px; }
+.choice { display: flex; align-items: flex-start; gap: 11px; padding: 11px 14px; border-radius: var(--r); border: 1.5px solid var(--border); background: white; cursor: pointer; transition: all .15s; }
+.choice:hover { border-color: var(--accent2); }
+.choice.selected { border-color: var(--accent); background: var(--accent-light); }
+.choice-check { width: 17px; height: 17px; border-radius: 4px; border: 1.5px solid var(--border); flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+.choice.selected .choice-check { background: var(--accent); border-color: var(--accent); }
+.check-svg { display: none; }
+.choice.selected .check-svg { display: block; }
+.choice-text { font-size: 13px; color: var(--ink); line-height: 1.5; }
+.scale-wrap { display: flex; flex-direction: column; gap: 8px; }
+.scale-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.scale-opt { width: 42px; height: 42px; border-radius: 8px; border: 1.5px solid var(--border); background: white; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; color: var(--ink2); }
+.scale-opt:hover { border-color: var(--accent); color: var(--accent); }
+.scale-opt.selected { background: var(--accent); color: white; border-color: var(--accent); }
+.scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink3); }
+.nav { display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.btn-back { background: none; border: 1.5px solid var(--border); color: var(--ink2); font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 10px 18px; border-radius: 8px; cursor: pointer; transition: all .15s; }
+.btn-back:hover { border-color: var(--ink2); }
+.btn-next { background: var(--accent); color: white; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 10px 22px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background .15s; }
+.btn-next:hover { background: #234a3d; }
+.btn-next:disabled { background: var(--bg2); color: var(--ink3); cursor: not-allowed; }
+.done-screen { display: none; text-align: center; padding: 4rem 0; }
+.done-screen.active { display: block; animation: fadeUp .4s ease; }
+.done-screen h2 { font-family: 'DM Serif Display', serif; font-size: 2rem; margin-bottom: 1rem; }
+.done-screen p { font-size: 14px; color: var(--ink2); line-height: 1.75; max-width: 420px; margin: 0 auto 1.5rem; }
+.level-pill { display: inline-flex; align-items: center; gap: 10px; background: var(--accent); color: white; padding: 10px 22px; border-radius: 30px; font-size: 14px; font-weight: 500; margin-bottom: 2rem; }
+.level-num { font-family: 'DM Serif Display', serif; font-size: 22px; }
+.result-dims { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 2rem; text-align: left; }
+.rdim { background: white; border: 1px solid var(--border); border-radius: var(--r); padding: 12px; }
+.rdim-label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: .05em; color: var(--ink3); margin-bottom: 5px; }
+.rdim-bar-wrap { height: 5px; background: var(--bg2); border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+.rdim-bar { height: 100%; background: var(--accent); border-radius: 3px; }
+.rdim-score { font-size: 18px; font-weight: 300; color: var(--ink); }
+.rdim-score span { font-size: 11px; color: var(--ink3); }
+.saving-msg { font-size: 13px; color: var(--ink3); margin-top: 1rem; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="logo"><div class="logo-dot"></div>Diagnóstico IA · Workshop</div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <span class="progress-label" id="progressLabel">0 / 4</span>
+  </div>
+</header>
+<div class="wrap">
+  <div class="name-screen" id="nameScreen">
+    <div class="intro-tag">Diagnóstico previo · Workshop IA</div>
+    <h1>¿Cómo usas la <em>inteligencia artificial</em> hoy?</h1>
+    <p>5 minutos, sin respuestas correctas o incorrectas. Esto nos ayuda a diseñar un workshop que se adapte a donde estás.</p>
+    <div class="name-input-wrap">
+      <label>Tu nombre</label>
+      <input class="name-input" id="nameInput" type="text" placeholder="Ej: Ana García" oninput="checkName()">
+    </div>
+    <div class="name-input-wrap">
+      <label>Tu área de trabajo</label>
+      <select class="role-select" id="roleSelect" onchange="checkName()">
+        <option value="">Selecciona tu perfil</option>
+        <option value="creativo">Creación artística (diseño, música, teatro, artes visuales…)</option>
+        <option value="admin">Administración, gestión o comunicación</option>
+        <option value="psicologo">Psicología, salud mental o trabajo social</option>
+        <option value="educacion">Educación o docencia</option>
+        <option value="otro">Otra</option>
+      </select>
+    </div>
+    <button class="start-btn" id="startBtn" onclick="startQuiz()" disabled>
+      Comenzar
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+    </button>
+  </div>
+
+  <div class="section" id="section1">
+    <div class="section-header"><div class="section-num">Sección 1 de 4</div><div class="section-title">Uso actual de IA</div></div>
+    <div class="question">
+      <div class="q-text">1. ¿Con qué frecuencia usas alguna herramienta de IA?</div>
+      <div class="singles" id="q1">
+        <div class="single" onclick="selectSingle('q1',0,1)"><div class="radio-dot"><div class="radio-inner"></div></div>Nunca la he usado</div>
+        <div class="single" onclick="selectSingle('q1',1,2)"><div class="radio-dot"><div class="radio-inner"></div></div>La probé una o dos veces</div>
+        <div class="single" onclick="selectSingle('q1',2,4)"><div class="radio-dot"><div class="radio-inner"></div></div>La uso ocasionalmente (algunas veces al mes)</div>
+        <div class="single" onclick="selectSingle('q1',3,6)"><div class="radio-dot"><div class="radio-inner"></div></div>La uso varias veces a la semana</div>
+        <div class="single" onclick="selectSingle('q1',4,8)"><div class="radio-dot"><div class="radio-inner"></div></div>La uso casi todos los días</div>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">2. ¿Para qué la usas principalmente?</div>
+      <div class="q-sub">Elige todas las que apliquen</div>
+      <div class="choices" id="q2">
+        <div class="choice" onclick="toggleChoice('q2',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Buscar información o respuestas rápidas</div></div>
+        <div class="choice" onclick="toggleChoice('q2',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Redactar o corregir textos</div></div>
+        <div class="choice" onclick="toggleChoice('q2',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Desarrollar o explorar ideas creativas</div></div>
+        <div class="choice" onclick="toggleChoice('q2',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Resumir documentos o contenido largo</div></div>
+        <div class="choice" onclick="toggleChoice('q2',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Aprender algo nuevo o entender un tema complejo</div></div>
+        <div class="choice" onclick="toggleChoice('q2',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">No la uso para nada específico aún</div></div>
+      </div>
+    </div>
+    <div class="nav"><div></div><button class="btn-next" onclick="goTo(2)">Siguiente →</button></div>
+  </div>
+
+  <div class="section" id="section2">
+    <div class="section-header"><div class="section-num">Sección 2 de 4</div><div class="section-title">Habilidades con IA</div></div>
+    <div class="question">
+      <div class="q-text">3. Cuando usas IA y la respuesta no es lo que esperabas, ¿qué haces?</div>
+      <div class="singles" id="q3">
+        <div class="single" onclick="selectSingle('q3',0,1)"><div class="radio-dot"><div class="radio-inner"></div></div>Lo dejo así y uso lo que salió</div>
+        <div class="single" onclick="selectSingle('q3',1,3)"><div class="radio-dot"><div class="radio-inner"></div></div>Vuelvo a preguntar lo mismo con otras palabras</div>
+        <div class="single" onclick="selectSingle('q3',2,6)"><div class="radio-dot"><div class="radio-inner"></div></div>Le digo qué estuvo mal y pido que lo corrija</div>
+        <div class="single" onclick="selectSingle('q3',3,8)"><div class="radio-dot"><div class="radio-inner"></div></div>Ajusto mi pregunta dándole más contexto</div>
+        <div class="single" onclick="selectSingle('q3',4,10)"><div class="radio-dot"><div class="radio-inner"></div></div>Tengo una estrategia para refinar respuestas paso a paso</div>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">4. ¿Cuál de estas cosas has hecho alguna vez?</div>
+      <div class="q-sub">Elige todas las que apliquen</div>
+      <div class="choices" id="q4">
+        <div class="choice" onclick="toggleChoice('q4',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Pedirle que adopte un rol ("actúa como…")</div></div>
+        <div class="choice" onclick="toggleChoice('q4',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Darle contexto sobre ti antes de preguntar</div></div>
+        <div class="choice" onclick="toggleChoice('q4',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Pedirle varias versiones para elegir</div></div>
+        <div class="choice" onclick="toggleChoice('q4',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Tener una conversación larga construida sobre respuestas anteriores</div></div>
+        <div class="choice" onclick="toggleChoice('q4',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Pedirle que critique o mejore algo tuyo</div></div>
+        <div class="choice" onclick="toggleChoice('q4',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Ninguna de las anteriores</div></div>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">5. ¿Cuánto confías en que puedes usar la IA para tareas de tu trabajo hoy?</div>
+      <div class="scale-wrap">
+        <div class="scale-options" id="q5">
+          <div class="scale-opt" onclick="selectScale('q5',this,1)">1</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,2)">2</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,3)">3</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,4)">4</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,5)">5</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,6)">6</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,7)">7</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,8)">8</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,9)">9</div>
+          <div class="scale-opt" onclick="selectScale('q5',this,10)">10</div>
+        </div>
+        <div class="scale-labels"><span>Nada seguro/a</span><span>Completamente seguro/a</span></div>
+      </div>
+    </div>
+    <div class="nav"><button class="btn-back" onclick="goTo(1)">Atrás</button><button class="btn-next" onclick="goTo(3)">Siguiente →</button></div>
+  </div>
+
+  <div class="section" id="section3">
+    <div class="section-header"><div class="section-num">Sección 3 de 4</div><div class="section-title">Intereses y motivaciones</div></div>
+    <div class="question">
+      <div class="q-text">6. ¿Qué te gustaría poder hacer con IA que hoy no puedes?</div>
+      <div class="q-sub">Elige hasta 3</div>
+      <div class="choices" id="q6">
+        <div class="choice" onclick="toggleChoice('q6',this,3)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Ahorrar tiempo en tareas repetitivas</div></div>
+        <div class="choice" onclick="toggleChoice('q6',this,3)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Desarrollar ideas creativas con más profundidad</div></div>
+        <div class="choice" onclick="toggleChoice('q6',this,3)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Aprender cosas nuevas más rápido</div></div>
+        <div class="choice" onclick="toggleChoice('q6',this,3)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Mejorar mis textos y comunicaciones</div></div>
+        <div class="choice" onclick="toggleChoice('q6',this,3)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Organizar mejor mi trabajo o proyectos</div></div>
+        <div class="choice" onclick="toggleChoice('q6',this,3)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Entender cómo la IA transforma mi campo</div></div>
+        <div class="choice" onclick="toggleChoice('q6',this,3)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Entender qué es la IA sin tecnicismos</div></div>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">7. ¿Qué te genera más resistencia sobre usar IA?</div>
+      <div class="q-sub">Elige todas las que apliquen</div>
+      <div class="choices" id="q7">
+        <div class="choice" onclick="toggleChoice('q7',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">No sé si la información que da es confiable</div></div>
+        <div class="choice" onclick="toggleChoice('q7',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Me preocupa la privacidad de lo que escribo</div></div>
+        <div class="choice" onclick="toggleChoice('q7',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Siento que quita autenticidad a mi trabajo</div></div>
+        <div class="choice" onclick="toggleChoice('q7',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">No sé bien cómo pedirle lo que necesito</div></div>
+        <div class="choice" onclick="toggleChoice('q7',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Me parece complicado o intimidante</div></div>
+        <div class="choice" onclick="toggleChoice('q7',this)"><div class="choice-check"><svg class="check-svg" width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-5" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="choice-text">Ninguna — me genera curiosidad más que resistencia</div></div>
+      </div>
+    </div>
+    <div class="nav"><button class="btn-back" onclick="goTo(2)">Atrás</button><button class="btn-next" onclick="goTo(4)">Siguiente →</button></div>
+  </div>
+
+  <div class="section" id="section4">
+    <div class="section-header"><div class="section-num">Sección 4 de 4</div><div class="section-title">Expectativas</div></div>
+    <div class="question">
+      <div class="q-text">8. ¿En qué etapa de tu carrera estás?</div>
+      <div class="singles" id="q8">
+        <div class="single" onclick="selectSingle('q8',0,'inicio')"><div class="radio-dot"><div class="radio-inner"></div></div>Empezando (menos de 3 años)</div>
+        <div class="single" onclick="selectSingle('q8',1,'desarrollo')"><div class="radio-dot"><div class="radio-inner"></div></div>En desarrollo (3 a 8 años)</div>
+        <div class="single" onclick="selectSingle('q8',2,'consolidada')"><div class="radio-dot"><div class="radio-inner"></div></div>Consolidada (más de 8 años)</div>
+      </div>
+    </div>
+    <div class="question">
+      <div class="q-text">9. ¿Qué esperas llevarte del workshop?</div>
+      <div class="singles" id="q9">
+        <div class="single" onclick="selectSingle('q9',0,'perder el miedo')"><div class="radio-dot"><div class="radio-inner"></div></div>Entender qué es la IA y perderle el miedo</div>
+        <div class="single" onclick="selectSingle('q9',1,'herramientas concretas')"><div class="radio-dot"><div class="radio-inner"></div></div>Herramientas concretas que pueda usar desde mañana</div>
+        <div class="single" onclick="selectSingle('q9',2,'integrar en flujo de trabajo')"><div class="radio-dot"><div class="radio-inner"></div></div>Integrar la IA en mi flujo de trabajo</div>
+        <div class="single" onclick="selectSingle('q9',3,'entender impacto en mi campo')"><div class="radio-dot"><div class="radio-inner"></div></div>Entender el impacto de la IA en mi campo</div>
+      </div>
+    </div>
+    <div class="nav"><button class="btn-back" onclick="goTo(3)">Atrás</button><button class="btn-next" onclick="submitResults()">Enviar respuestas →</button></div>
+  </div>
+
+  <div class="done-screen" id="doneScreen">
+    <div style="font-size:3rem;margin-bottom:1.5rem;">✦</div>
+    <h2>¡Listo, gracias!</h2>
+    <p>Tus respuestas quedaron guardadas. El facilitador las verá antes del workshop para adaptar el contenido a tu nivel.</p>
+    <div class="level-pill">Tu nivel estimado: <span class="level-num" id="doneLevel">—</span> / 10</div>
+    <div class="result-dims" id="doneDims"></div>
+    <p style="font-size:13px;color:var(--ink3);">Puedes cerrar esta ventana.</p>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLt71lBHR2z1OhcFLRMdoHMgSVycanN_sN2G5y4L3RmrDkidkmnd-i2zQDOIBCnrVd/exec';
+const state = { name:'', role:'', q1:null, q2:[], q3:null, q4:[], q5:null, q6:[], q7:[], q8:null, q9:null };
+
+function checkName() {
+  const n = document.getElementById('nameInput').value.trim();
+  const r = document.getElementById('roleSelect').value;
+  document.getElementById('startBtn').disabled = !(n.length > 1 && r);
+}
+
+function startQuiz() {
+  state.name = document.getElementById('nameInput').value.trim();
+  state.role = document.getElementById('roleSelect').value;
+  document.getElementById('nameScreen').style.display = 'none';
+  goTo(1);
+}
+
+function goTo(n) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('section' + n);
+  if (el) { el.classList.add('active'); window.scrollTo({top:0,behavior:'smooth'}); }
+  document.getElementById('progressFill').style.width = ((n-1)/4*100) + '%';
+  document.getElementById('progressLabel').textContent = (n-1) + ' / 4';
+}
+
+function selectSingle(qid, idx, score) {
+  document.getElementById(qid).querySelectorAll('.single').forEach((el,i) => el.classList.toggle('selected', i===idx));
+  state[qid] = score;
+}
+function selectScale(qid, el, val) {
+  document.getElementById(qid).querySelectorAll('.scale-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  state[qid] = val;
+}
+function toggleChoice(qid, el, max) {
+  const isSelected = el.classList.contains('selected');
+  if (!isSelected && max) {
+    const cur = document.getElementById(qid).querySelectorAll('.selected').length;
+    if (cur >= max) return;
+  }
+  el.classList.toggle('selected');
+  state[qid] = Array.from(document.getElementById(qid).querySelectorAll('.selected'))
+    .map(e => e.querySelector('.choice-text').textContent.trim());
+}
+
+function calcScores() {
+  const freq = state.q1 || 0;
+  const iterS = state.q3 || 0;
+  const confS = state.q5 || 0;
+  const advS = (state.q4||[]).filter(x=>x!=='Ninguna de las anteriores').length;
+  const dimFreq = Math.round(freq/8*10);
+  const dimIter = Math.round(iterS);
+  const dimConf = Math.round(confS);
+  const dimSkill = Math.round(advS/5*10);
+  const dimIntent = Math.min(10, (state.q6||[]).length*3+1);
+  const overall = Math.round((dimFreq+dimIter+dimConf+dimSkill)/4);
+  return { dimFreq, dimIter, dimConf, dimSkill, dimIntent, overall };
+}
+
+async function submitResults() {
+  const scores = calcScores();
+  const payload = {
+    name: state.name,
+    role: state.role,
+    overall: scores.overall,
+    dimFreq: scores.dimFreq,
+    dimIter: scores.dimIter,
+    dimConf: scores.dimConf,
+    dimSkill: scores.dimSkill,
+    dimIntent: scores.dimIntent,
+    intereses: state.q6,
+    barreras: state.q7,
+    expectativa: state.q9
+  };
+
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch(e) { console.warn('Error enviando:', e); }
+
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('progressLabel').textContent = '4 / 4';
+  document.getElementById('doneLevel').textContent = scores.overall;
+
+  const dims = [
+    {label:'Frecuencia', score: scores.dimFreq},
+    {label:'Iteración', score: scores.dimIter},
+    {label:'Confianza', score: scores.dimConf},
+    {label:'Técnicas', score: scores.dimSkill},
+    {label:'Motivación', score: scores.dimIntent},
+  ];
+  document.getElementById('doneDims').innerHTML = dims.map(d=>`
+    <div class="rdim">
+      <div class="rdim-label">${d.label}</div>
+      <div class="rdim-bar-wrap"><div class="rdim-bar" style="width:${d.score*10}%"></div></div>
+      <div class="rdim-score">${d.score}<span>/10</span></div>
+    </div>`).join('');
+
+  document.getElementById('doneScreen').classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
